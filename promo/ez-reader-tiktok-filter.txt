@@ -1,0 +1,23 @@
+[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,gblur=sigma=28,eq=brightness=-0.35[bg];
+[0:v]scale=1000:-2[screen];
+[bg][screen]overlay=(W-w)/2:500,
+drawbox=x=50:y=90:w=980:h=300:color=0x111827@0.92:t=fill,
+drawbox=x=50:y=1420:w=980:h=390:color=0x111827@0.94:t=fill,
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='MEET EZ READER':fontcolor=white:fontsize=76:x=(w-text_w)/2:y=145:enable='between(t,0,4)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='FROM ZHI SYSTEMS':fontcolor=0x67e8f9:fontsize=42:x=(w-text_w)/2:y=250:enable='between(t,0,4)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='WRITE  •  REWRITE':fontcolor=white:fontsize=62:x=(w-text_w)/2:y=145:enable='between(t,4,11)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='HOMEWORK HELP':fontcolor=0xfacc15:fontsize=55:x=(w-text_w)/2:y=245:enable='between(t,4,11)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='MATH NOTATION':fontcolor=white:fontsize=67:x=(w-text_w)/2:y=145:enable='between(t,11,17)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='LOOKS PERFECT':fontcolor=0x4ade80:fontsize=58:x=(w-text_w)/2:y=245:enable='between(t,11,17)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='ANY WRITING STYLE':fontcolor=white:fontsize=63:x=(w-text_w)/2:y=145:enable='between(t,17,24)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='Your sample. Your voice.':fontcolor=0xc4b5fd:fontsize=43:x=(w-text_w)/2:y=250:enable='between(t,17,24)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='LONG DOCUMENTS':fontcolor=white:fontsize=64:x=(w-text_w)/2:y=145:enable='between(t,24,31)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='ONE COHERENT VOICE':fontcolor=0x67e8f9:fontsize=46:x=(w-text_w)/2:y=250:enable='between(t,24,31)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='ZHI SYSTEMS CREATES':fontcolor=white:fontsize=49:x=(w-text_w)/2:y=1460:enable='between(t,31,39)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='CUSTOM CERTIFICATIONS':fontcolor=0xfacc15:fontsize=42:x=(w-text_w)/2:y=1545:enable='between(t,31,39)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='COURSES + APPS':fontcolor=0xfacc15:fontsize=42:x=(w-text_w)/2:y=1610:enable='between(t,31,39)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='Colleges • People • Banks • Businesses':fontcolor=white:fontsize=30:x=(w-text_w)/2:y=1695:enable='between(t,31,39)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='TRY IT TODAY':fontcolor=white:fontsize=66:x=(w-text_w)/2:y=1480:enable='between(t,39,44)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='originalezreader.ink':fontcolor=0x67e8f9:fontsize=48:x=(w-text_w)/2:y=1590:enable='between(t,39,44)',
+drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='Your words. Your style. Your goals.':fontcolor=white:fontsize=34:x=(w-text_w)/2:y=1690:enable='between(t,39,44)',
+fade=t=in:st=0:d=0.5,fade=t=out:st=43.1:d=0.5[v]

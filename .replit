@@ -1,0 +1,37 @@
+modules = ["python-3.11", "python3", "nodejs-24"]
+
+[nix]
+channel = "stable-24_05"
+packages = ["ffmpeg-full", "freetype", "glibcLocales", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "tcl", "tesseract", "tk", "zlib"]
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Production Server"
+
+[[workflows.workflow]]
+name = "Production Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "gunicorn --workers 4 --bind 0.0.0.0:5000 --timeout 120 main:app"
+waitForPort = 5000
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[agent]
+integrations = ["perplexity_v0==1.0.0", "python_sendgrid==1.0.0", "web_scraper==1.0.0", "python_anthropic==1.0.0", "python_openai==1.0.0"]

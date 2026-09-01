@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EZ Reader</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/button-fixes.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/consistent-ui.css') }}?v=20250505" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/aligned-buttons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/button-sizing.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/content-source.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/smart-search.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/content-preview.css') }}?v=20250505" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/chunk-selection.css') }}" rel="stylesheet">
+    <!-- Mathematical notation rendering CSS -->
+    <link href="{{ url_for('static', filename='css/math-rendering.css') }}" rel="stylesheet">
+
+    <!-- jQuery UI CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/themes/base/jquery-ui.min.css">
+    <!-- Add jQuery and jQuery UI -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <!-- Add Bootstrap JavaScript and its dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- MathJax for Mathematical Notation -->
+    <script>
+    window.MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true,
+            processEnvironments: true,
+            macros: {
+                RR: '\\mathbb{R}',
+                NN: '\\mathbb{N}',
+                ZZ: '\\mathbb{Z}',
+                QQ: '\\mathbb{Q}',
+                CC: '\\mathbb{C}'
+            }
+        },
+        options: {
+            ignoreHtmlClass: 'tex2jax_ignore',
+            processHtmlClass: 'tex2jax_process'
+        },
+        startup: {
+            ready: function () {
+                console.log('MathJax startup complete');
+                MathJax.startup.defaultReady();
+            }
+        }
+    };
+    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <!-- KaTeX for Mathematical Notation (fallback) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" integrity="sha384-GvrOXuhMATgEsSwCs4smul74iXGOixntILdUW9XmUC6+HX0sLNAK3q71HotJqlAn" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" integrity="sha384-cpW21h6RZv/phavutF+AuVYrr+dA8xD9zs6FwLpaCct6O9ctzYFfFr4dgmgccOTx" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+</head>
+<body>
+    <!-- Processing status and progress bar container -->
+    <div id="progressContainer" style="display: none; position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.3); z-index: 1100; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div style="background: rgba(30,30,30,0.8); border-radius: 10px; padding: 15px;">
+                        <h5 id="progressTitle" class="text-center text-white mb-2">Processing Document</h5>
+                        <div id="processingStatus" class="text-center text-white mb-3">Initializing...</div>
+                        <div class="progress" style="height: 25px;">
+                            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <small id="progressDetails" class="text-white">Processed: 0 of 0</small>
+                            <small id="progressTimeEstimate" class="text-white">Estimated time remaining: calculating...</small>
+                        </div>
+                        <div class="text-center mt-3">
+                            <button id="cancelProcessingBtn" class="btn btn-sm btn-outline-light">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="navigation-controls d-flex justify-content-center align-items-center mb-4">
+        <div class="card w-100" style="background-color: rgba(0,0,0,0.1); border-radius: 10px;">
+            <div class="card-body">
+                <h5 class="card-title text-center mb-3">Document Navigation</h5>
+                <div class="d-flex justify-content-center align-items-center">
+                    <button id="prevChunkBtn" class="btn btn-primary" disabled>
+                        <i class="bi bi-arrow-left"></i> Previous Page
+                    </button>
+                    <div class="d-flex align-items-center mx-3">
+                        <span class="me-2">Page</span>
+                        <input type="number" id="pageInput" class="form-control form-control-sm mx-2" style="width: 80px;" min="1" value="1">
+                        <span class="ms-2">of <span id="totalPages">1</span></span>
+                    </div>
+                    <button id="nextChunkBtn" class="btn btn-primary" disabled>
+                        Next Page <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+                <div class="d-flex justify-content-center mt-3">
+                    <button id="selectChunksBtn" class="btn btn-outline-info" disabled>
+                        <i class="bi bi-grid-3x3-gap"></i> Choose Sections to Process
+                    </button>
+                </div>
+                <div class="text-center mt-3">
+                    <small class="text-muted">Documents over 2,000 words are divided into selectable sections</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rewrite Instructions Modal -->
+    <div class="modal fade" id="rewriteInstructionsModal" tabindex="-1" aria-labelledby="rewriteInstructionsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rewriteInstructionsModalLabel">Customize Rewrite</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="rewriteInstructionsForm">
+                        <div class="form-group mb-3">
+                            <label for="rewriteInstructions" class="form-label">How would you like the text rewritten?</label>
+                            <textarea id="rewriteInstructions" class="form-control" rows="4" 
+                                placeholder="E.g., simplify, make more formal, change to active voice, use more metaphors, etc."></textarea>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="rewriteAuthorStyle" class="form-label">Author style (optional)</label>
+                            <input type="text" id="rewriteAuthorStyle" class="form-control"
+                                placeholder="E.g., Hemingway, Stephen King, academic, journalistic">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="rewritePreserveLength" checked>
+                            <label class="form-check-label" for="rewritePreserveLength">
+                                Preserve original length
+                            </label>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="rewriteAiProvider" class="form-label">AI Provider (optional)</label>
+                            <select id="rewriteAiProvider" class="form-select">
+                                <option value="">Auto-select</option>
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="perplexity">Perplexity</option>
+                                <option value="deepseek">DeepSeek</option>
+                            </select>
+                        </div>
+                        <input type="hidden" id="rewriteMode" value="chunk">
+                        <input type="hidden" id="rewriteChunkNumber" value="0">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitRewrite">Rewrite</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chunk Selection Modal -->
+    <div class="modal fade" id="chunkSelectionModal" tabindex="-1" aria-labelledby="chunkSelectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="chunkSelectionModalLabel">Choose Sections to Process</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <div>
+                            <button id="selectAllChunks" class="btn btn-sm btn-outline-primary me-2">Select All</button>
+                            <button id="deselectAllChunks" class="btn btn-sm btn-outline-secondary me-2">Deselect All</button>
+                            <button id="invertChunkSelection" class="btn btn-sm btn-outline-info">Invert Selection</button>
+                        </div>
+                        <div>
+                            <div class="input-group">
+                                <input type="text" id="chunkRangeInput" class="form-control form-control-sm" 
+                                    placeholder="e.g., 1-5, 7, 10-12" aria-label="Chunk range selection">
+                                <button class="btn btn-sm btn-outline-success" type="button" id="applyChunkRange">Apply Range</button>
+                            </div>
+                            <small class="text-muted">Enter ranges like "1-5, 7, 10-12"</small>
+                        </div>
+                    </div>
+                    
+                    <p class="small text-muted mb-2">Each thumbnail shows text from that section. Select only the sections you want rewritten.</p>
+                    <div class="chunk-list-container mb-3">
+                        <div id="chunkListContainer" class="chunk-thumbnail-grid"></div>
+                    </div>
+                    
+                    <div class="selected-chunks-summary mb-3 p-2 border rounded">
+                        <h6>Summary</h6>
+                        <div id="selectedChunksSummary">No chunks selected</div>
+                    </div>
+                    
+                    <!-- Processing Options Tabs -->
+                    <ul class="nav nav-tabs" id="processingOptionsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="rewrite-tab" data-bs-toggle="tab" data-bs-target="#rewrite-content" 
+                                    type="button" role="tab" aria-controls="rewrite-content" aria-selected="true">Process Text</button>
+                        </li>
+
+                    </ul>
+                    
+                    <!-- Tab Content -->
+                    <div class="tab-content mt-3" id="processingOptionsContent">
+                        <!-- Rewrite Tab -->
+                        <div class="tab-pane fade show active" id="rewrite-content" role="tabpanel" aria-labelledby="rewrite-tab">
+                            <div class="form-group">
+                                <label for="chunkCustomInstructions" class="form-label">Custom Processing Instructions:</label>
+                                <textarea id="chunkCustomInstructions" class="form-control" rows="3" 
+                                          placeholder="Enter specific instructions for how to process the selected chunks..."></textarea>
+                            </div>
+                            
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="chunkPreserveLength" checked>
+                                <label class="form-check-label" for="chunkPreserveLength">
+                                    Preserve approximate length
+                                </label>
+                            </div>
+                            
+                            <div class="mt-2">
+                                <label for="chunkAuthorStyle" class="form-label">Author Style (Optional):</label>
+                                <input type="text" id="chunkAuthorStyle" class="form-control" 
+                                       placeholder="e.g., Hemingway, Academic, Casual...">
+                            </div>
+                            
+                            <div class="mt-2">
+                                <label for="chunkAIProvider" class="form-label">AI Provider (Optional):</label>
+                                <select id="chunkAIProvider" class="form-select">
+                                    <option value="">Auto-select (recommended)</option>
+                                    <option value="openai">OpenAI</option>
+                                    <option value="anthropic">Anthropic</option>
+                                    <option value="perplexity">Perplexity</option>
+                                    <option value="deepseek">DeepSeek</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Translate Tab -->
+                        <div class="tab-pane fade" id="translate-content" role="tabpanel" aria-labelledby="translate-tab">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="chunkSourceLanguage" class="form-label">Source Language:</label>
+                                        <select id="chunkSourceLanguage" class="form-select">
+                                            <option value="auto">Auto-detect</option>
+                                            <option value="en">English</option>
+                                            <option value="es">Spanish</option>
+                                            <option value="fr">French</option>
+                                            <option value="de">German</option>
+                                            <option value="it">Italian</option>
+                                            <option value="pt">Portuguese</option>
+                                            <option value="ru">Russian</option>
+                                            <option value="ja">Japanese</option>
+                                            <option value="zh">Chinese</option>
+                                            <option value="ko">Korean</option>
+                                            <option value="ar">Arabic</option>
+                                            <option value="hi">Hindi</option>
+                                            <option value="nl">Dutch</option>
+                                            <option value="sv">Swedish</option>
+                                            <option value="pl">Polish</option>
+                                            <option value="vi">Vietnamese</option>
+                                            <option value="tr">Turkish</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="chunkTargetLanguage" class="form-label">Target Language:</label>
+                                        <select id="chunkTargetLanguage" class="form-select">
+                                            <option value="">Please select</option>
+                                            <option value="en">English</option>
+                                            <option value="es">Spanish</option>
+                                            <option value="fr">French</option>
+                                            <option value="de">German</option>
+                                            <option value="it">Italian</option>
+                                            <option value="pt">Portuguese</option>
+                                            <option value="ru">Russian</option>
+                                            <option value="ja">Japanese</option>
+                                            <option value="zh">Chinese</option>
+                                            <option value="ko">Korean</option>
+                                            <option value="ar">Arabic</option>
+                                            <option value="hi">Hindi</option>
+                                            <option value="nl">Dutch</option>
+                                            <option value="sv">Swedish</option>
+                                            <option value="pl">Polish</option>
+                                            <option value="vi">Vietnamese</option>
+                                            <option value="tr">Turkish</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group mt-3">
+                                <label for="chunkTranslationInstructions" class="form-label">Additional Translation Instructions (Optional):</label>
+                                <textarea id="chunkTranslationInstructions" class="form-control" rows="2" 
+                                          placeholder="E.g., formal tone, preserve terminology, etc."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="processSelectedChunks">Process Selected Chunks</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container py-4">
+        <h1 class="text-center mb-4">EZ Reader</h1>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="alert alert-danger error-message" role="alert"></div>
+
+        <!-- Info Message for Cached Results -->
+        <div id="cacheMessage" class="alert alert-info cache-message" role="alert">
+            Using cached result to reduce API usage
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="spinner-wrapper">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="spinner-text mt-2">Processing your request...</div>
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="mb-3">
+            <div class="card">
+                <div class="card-body py-2">
+                    <div id="dropZone" class="drop-zone">
+                        <div class="drop-zone-text">
+                            <i class="bi bi-cloud-upload"></i>
+                            <p>Drag and drop files here or click to upload</p>
+                            <p class="text-muted small">Supported formats: PDF, Word documents (.doc, .docx), Images (.jpg, .jpeg, .png), Audio files (.mp3, .wav, .m4a, .mp4, .mpeg, .mpga, .webm, .flac, .aac, .ogg)</p>
+                            <p class="text-muted small">Maximum file size: 300MB</p>
+                        </div>
+                        <form id="uploadForm" class="upload-form" enctype="multipart/form-data">
+                            <input type="file" class="file-input" id="fileInput" name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp3,.wav,.m4a,.mp4,.mpeg,.mpga,.webm,.flac,.aac,.ogg">
+                        </form>
+                        <button class="mobile-upload-btn" id="mobileUploadBtn">
+                            Choose File to Upload
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="row">
+            <!-- Input Section -->
+            <div class="col-md-6 mb-4">
+                <div class="form-group">
+                    <div class="section-label mb-1 d-flex align-items-center">
+                        <label for="inputText" class="me-2">Input Text:</label>
+                        <button id="detectInputAiBtn" class="btn btn-sm btn-outline-info py-0 px-1" style="font-size: 0.7rem;" title="Detect if input text was written by AI">
+                            <i class="bi bi-robot"></i> AI?
+                        </button>
+                        
+                        <div class="d-inline-flex align-items-center ms-2">
+                            <label for="processingMode" class="me-2 text-muted small">Mode:</label>
+                            <select id="processingMode" class="form-select form-select-sm" style="width: 120px;">
+                                <option value="rewrite">Rewrite</option>
+                                <option value="homework">Homework</option>
+                            </select>
+                        </div>
+                        
+                        <div class="d-inline-flex align-items-center ms-2">
+                            <label for="topAiProvider" class="me-2 text-muted small">AI:</label>
+                            <select id="topAiProvider" class="form-select form-select-sm" style="width: 120px;">
+                                <option value="">Auto</option>
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="perplexity">Perplexity</option>
+                                <option value="deepseek">DeepSeek</option>
+                                <option value="azure">Azure</option>
+                            </select>
+                        </div>
+                        
+                        <button id="clearInputBtn" class="btn btn-sm btn-outline-secondary ms-2">
+                            Clear Text
+                        </button>
+                        
+                        <!-- DEDICATED HOMEWORK BUTTON -->
+                        <button id="doHomeworkBtn" class="btn btn-success ms-3" style="font-weight: bold;">
+                            <i class="bi bi-mortarboard"></i> DO AS HOMEWORK
+                        </button>
+                    </div>
+                    <div class="button-group">
+                        <button id="startDictationBtn" class="btn btn-outline-primary" title="Start Dictation">
+                            <i class="bi bi-mic"></i> Start Dictation
+                        </button>
+                        <button id="stopDictationBtn" class="btn btn-outline-danger" style="display: none;" title="Stop Dictation">
+                            <i class="bi bi-mic-mute"></i> Stop
+                        </button>
+                        <button id="uploadAudioBtn" class="btn btn-outline-primary" title="Upload Audio File">
+                            <i class="bi bi-file-earmark-music"></i> Upload Audio
+                        </button>
+
+                        <button id="rewriteChunkBtn" class="btn btn-outline-success" title="Rewrite this chunk of text">
+                            <i class="bi bi-pencil"></i> Rewrite This Chunk
+                        </button>
+                        <button id="rewriteAllBtn" class="btn btn-outline-warning" title="Rewrite all text">
+                            <i class="bi bi-pencil-square"></i> Rewrite Complete Text
+                        </button>
+                    </div>
+
+
+                    <div class="position-relative">
+                        <textarea id="inputText" class="form-control text-area" placeholder="Enter your text here or upload a document above..."></textarea>
+
+                        <div id="inputWordCount" class="word-count-indicator">
+                            <span class="badge bg-primary">0 words</span>
+                        </div>
+
+                    </div>
+                    <div class="math-help">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Mathematical notation: Use LaTeX format - 
+                            <code>$x^2$</code> for inline math, <code>$$equation$$</code> for display equations
+                        </small>
+                    </div>
+                    
+                    <!-- Audio Recording Controls -->
+                    <div id="audioControls" class="mt-2" style="display: none;">
+                        <div class="alert alert-info">
+                            <div id="dictationStatus">Listening...</div>
+                            <div class="progress mt-2">
+                                <div id="dictationProgress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div id="audioPlayerContainer" class="mt-2">
+                            <audio id="audioPlayer" controls class="w-100" style="display: none;"></audio>
+                        </div>
+                        <div class="btn-group mt-2">
+                            <button id="downloadRecordingBtn" class="btn btn-outline-secondary" disabled>
+                                <i class="bi bi-download"></i> Download Recording
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Style Source Box -->
+                    <div class="content-source-box mt-3 border rounded p-3 bg-dark">
+                        <h5><i class="bi bi-brush"></i> Style Source</h5>
+                        <p class="small text-muted">Add a writing sample whose tone, vocabulary, sentence structure, and pacing should guide the rewrite. This source supplies style only—not facts or arguments.</p>
+
+                        <ul class="nav nav-tabs mb-3" id="styleSourceTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="style-paste-tab" data-bs-toggle="tab" data-bs-target="#style-paste-content" type="button" role="tab">Paste Text</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="style-upload-tab" data-bs-toggle="tab" data-bs-target="#style-upload-content" type="button" role="tab">Upload File</button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="style-paste-content" role="tabpanel">
+                                <textarea id="styleSourceText" class="form-control" rows="6" placeholder="Paste a representative writing sample here..."></textarea>
+                            </div>
+                            <div class="tab-pane fade" id="style-upload-content" role="tabpanel">
+                                <div id="styleSourceDropZone" class="drop-zone-small mb-2">
+                                    <div class="drop-zone-text">
+                                        <i class="bi bi-cloud-upload"></i>
+                                        <p>Drag and drop a style source file or click to upload</p>
+                                    </div>
+                                    <input type="file" class="file-input" id="styleSourceInput" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <div id="styleSourceStatus" class="small text-muted">No style source added</div>
+                            <button id="clearStyleSourceBtn" class="btn btn-sm btn-outline-secondary" type="button">
+                                <i class="bi bi-x-lg"></i> Remove Style Source
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Content Source Upload Box -->
+                    <div class="content-source-box mt-3 border rounded p-3 bg-dark">
+                        <h5><i class="bi bi-file-earmark-text"></i> Content Source Material - UPDATED</h5>
+                        <p class="small text-muted">Add secondary content to enrich your input text with additional information, ideas, examples, and arguments.</p>
+                        
+
+                        
+                        <!-- Option tabs for upload or paste -->
+                        <ul class="nav nav-tabs mb-3" id="contentSourceTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-content" type="button" role="tab" aria-controls="upload-content" aria-selected="true">Upload File</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="paste-tab" data-bs-toggle="tab" data-bs-target="#paste-content" type="button" role="tab" aria-controls="paste-content" aria-selected="false">Paste Text</button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="contentSourceTabContent">
+                            <!-- Upload file tab -->
+                            <div class="tab-pane fade show active" id="upload-content" role="tabpanel" aria-labelledby="upload-tab">
+                                <div id="contentSourceDropZone" class="drop-zone-small mb-2">
+                                    <div class="drop-zone-text">
+                                        <i class="bi bi-cloud-upload"></i>
+                                        <p>Drag and drop a content source file or click to upload</p>
+                                    </div>
+                                    <form id="contentSourceForm" class="upload-form" enctype="multipart/form-data">
+                                        <input type="file" class="file-input" id="contentSourceInput" name="file" accept=".pdf,.doc,.docx,.txt">
+                                        <input type="hidden" id="contentSourceTextEntryId" name="text_entry_id" value="">
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <!-- Paste text tab -->
+                            <div class="tab-pane fade" id="paste-content" role="tabpanel" aria-labelledby="paste-tab">
+                                <div class="form-group">
+                                    <textarea id="contentSourceText" class="form-control" rows="6" 
+                                            placeholder="Paste or type your content source material here..."></textarea>
+                                    <div class="d-flex mt-2">
+                                        <button id="saveContentSourceText" class="btn btn-primary me-2">Save Content Source</button>
+                                        <button id="clearContentSourceText" class="btn btn-outline-secondary">
+                                            <i class="bi bi-x-lg"></i> Clear
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="contentSourceInfo" class="content-source-info mt-3" style="display: none;">
+                            <div class="alert alert-success">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <i class="bi bi-check-circle-fill"></i> 
+                                        <span id="contentSourceFilename">file.pdf</span> 
+                                        (<span id="contentSourceWordCount">0</span> words)
+                                    </div>
+                                    <button id="removeContentSourceBtn" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Content Source Usage Instructions -->
+                        <div class="form-group mt-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label for="contentSourceInstructions" class="form-label mb-0">How would you like the Content Source to be used?</label>
+                                <button id="clearContentSourceInstructions" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-x-lg"></i> Clear Instructions
+                                </button>
+                            </div>
+                            <textarea id="contentSourceInstructions" class="form-control mt-1" rows="2" 
+                                    placeholder="Optional: Enter specific instructions on how to use the content source material. Default is to intelligently enrich the text."></textarea>
+                        </div>
+                        
+                        <!-- Direct Combine Buttons -->
+                        <div class="mt-3">
+                            <div class="d-flex gap-2 mb-2">
+                                <button id="combineTargetChunkBtn" class="btn btn-success flex-grow-1" type="button">
+                                    <i class="bi bi-arrow-repeat"></i> Combine for Current Chunk
+                                </button>
+                                <button id="combineEntireDocBtn" class="btn btn-outline-success flex-grow-1" type="button">
+                                    <i class="bi bi-arrow-repeat"></i> Combine for Entire Document
+                                </button>
+                            </div>
+                            <div class="text-muted small mt-1">
+                                <ul class="mb-0 ps-3">
+                                    <li><strong>Current Chunk</strong>: Enriches only the displayed portion of text (for quick previews)</li>
+                                    <li><strong>Entire Document</strong>: Processes the complete document with content source (best for long documents)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Section -->
+            <div class="col-md-6 mb-4">
+                <div class="form-group">
+                    <div class="section-label mb-1">
+                        <div>
+                            <label for="outputText">Processed Text:</label>
+                            <small class="text-muted ms-2">(You can edit this text directly)</small>
+                        </div>
+                        
+                        <button id="clearOutputBtn" class="btn btn-sm btn-outline-secondary ms-2">
+                            Clear Text
+                        </button>
+                        
+                        <button id="shareOutputBtn" class="btn btn-sm btn-outline-primary ms-2">
+                            <i class="bi bi-envelope"></i> Share
+                        </button>
+                        
+                        <button id="convertToSpeechBtn" class="btn btn-sm btn-outline-info ms-2">
+                            <i class="bi bi-volume-up"></i> Convert to Speech
+                        </button>
+                    </div>
+                    <div class="button-group">
+                        <button id="copyOutputBtn" class="btn btn-outline-success">
+                            <i class="bi bi-clipboard"></i> Copy Text
+                        </button>
+                        <!-- Direct download buttons -->
+                        <button id="printToPdfBtn" class="btn btn-outline-danger">
+                            <i class="bi bi-printer"></i> Print/PDF
+                        </button>
+                        
+                        <button id="downloadHtmlBtn" class="btn btn-outline-info">
+                            <i class="bi bi-file-code"></i> HTML
+                        </button>
+                        
+                        <button id="downloadWordBtn" class="btn btn-outline-primary">
+                            <i class="bi bi-file-word"></i> Word
+                        </button>
+                        
+                        <button id="downloadLatexBtn" class="btn btn-outline-secondary">
+                            <i class="bi bi-file-text"></i> LaTeX
+                        </button>
+                        
+                        <button id="downloadTxtBtn" class="btn btn-outline-dark">
+                            <i class="bi bi-file-text"></i> TXT
+                        </button>
+                        
+                        <button id="detectAiBtn" class="btn btn-outline-warning">
+                            <i class="bi bi-robot"></i> Detect AI
+                        </button>
+                    </div>
+                    <!-- Hidden format selector (kept for compatibility) -->
+                    <div id="downloadFormatSelector" style="display: none;">
+                        <select class="form-select form-select-sm" id="outputDownloadFormat">
+                            <option value="pdf">PDF</option>
+                            <option value="docx">Word Document</option>
+                        </select>
+                    </div>
+                    <!-- AI Detection Results -->
+                    <div id="aiDetectionResult" style="display: none; margin-top: 10px;"></div>
+                    <div class="position-relative">
+                        <!-- Math-Rendered Display -->
+                        <div id="outputMathDisplay" class="math-rendered-output" style="display: none; min-height: 400px; max-height: 600px; overflow-y: auto;"></div>
+                        
+                        <!-- Original Textarea (for editing) -->
+                        <textarea id="outputText" class="form-control text-area" rows="20" 
+                            placeholder="Processed text will appear here..." readonly></textarea>
+                        
+                        <!-- Toggle Button -->
+                        <button id="toggleMathView" class="btn btn-sm btn-outline-primary position-absolute" 
+                                style="top: 10px; right: 50px; z-index: 10;">
+                            <i class="bi bi-calculator"></i> Show Math View
+                        </button>
+                        
+                        <div id="outputWordCount" class="word-count-indicator">
+                            <span class="badge bg-success">0 words</span>
+                        </div>
+                    </div>
+                    
+                    <!-- CRITIQUE & REWRITE DIRECTLY FROM OUTPUT -->
+                    <div id="critiqueRewriteSection" class="mt-3">
+                        <div class="card border-warning mb-3">
+                            <div class="card-header bg-warning text-dark">
+                                <i class="bi bi-pencil-square"></i> Critique & Rewrite Output
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">Enter your critique or change requests for the output above:</p>
+                                <div class="mb-3">
+                                    <textarea id="critiqueText" class="form-control" rows="3" 
+                                        placeholder="Example: 'Make this more like Kant' or 'Add more logic examples' or 'Use Carl Hempel's style more precisely'"></textarea>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="aiProvider" class="form-label">AI Provider:</label>
+                                        <select id="aiProvider" class="form-select">
+                                            <option value="">Auto (Default)</option>
+                                            <option value="openai">OpenAI</option>
+                                            <option value="anthropic">Anthropic</option>
+                                            <option value="azure">Azure OpenAI (GPT-4 Turbo)</option>
+                                            <option value="perplexity">Perplexity</option>
+                                            <option value="deepseek">DeepSeek</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mt-4">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="preserveLength" checked>
+                                                <label class="form-check-label" for="preserveLength">Preserve/Increase Length</label>
+                                            </div>
+                                            <small class="text-muted">Uncheck for more lean, concise rewriting</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button id="rewriteFromOutputBtn" class="btn btn-warning">
+                                    <i class="bi bi-lightning"></i> Apply Changes to Output
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Direct link to Murf.ai for TTS -->
+                    <div id="ttsControls" class="mt-3">
+                        <div class="card border-primary mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <i class="bi bi-cloud"></i> Text-to-Speech Options
+                            </div>
+                            <div class="card-body">
+                                <div id="tts-controls">
+                                    <h5 class="card-title">Azure Text-to-Speech</h5>
+                                    <p>Convert your processed text to speech using Azure's high-quality AI voices.</p>
+                                    
+                                    <div class="mb-3">
+                                        <label for="gender-select" class="form-label">Voice Gender</label>
+                                        <select id="gender-select" class="form-select">
+                                            <option value="female" selected>Female</option>
+                                            <option value="male">Male</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="language-select" class="form-label">Language (Optional)</label>
+                                        <select id="language-select" class="form-select">
+                                            <option value="" selected>Auto-detect language</option>
+                                            <option value="en">English</option>
+                                            <option value="es">Spanish</option>
+                                            <option value="fr">French</option>
+                                            <option value="de">German</option>
+                                            <option value="it">Italian</option>
+                                            <option value="pt">Portuguese</option>
+                                            <option value="ja">Japanese</option>
+                                            <option value="zh">Chinese</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="use-reduced-length" value="1">
+                                        <label class="form-check-label" for="use-reduced-length">
+                                            Use minimal text (for very long documents)
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2">
+                                        <button id="create-audiobook-btn" class="btn btn-primary">
+                                            <i class="bi bi-soundwave"></i> Generate Audio with Azure
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div id="tts-processing" class="d-none">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2">Processing your audio... This may take a few moments.</p>
+                                    </div>
+                                </div>
+                                
+                                <div id="tts-result" class="d-none mt-4">
+                                    <h5 class="card-title">Your Audio is Ready</h5>
+                                    <div class="mb-3">
+                                        <audio id="tts-audio-player" class="w-100" controls></audio>
+                                    </div>
+                                    <div class="mb-3">
+                                        <p id="tts-language-info" class="text-muted small"></p>
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <a id="tts-download-link" class="btn btn-success" href="#" download>
+                                            <i class="bi bi-download"></i> Download Audio
+                                        </a>
+                                        <button id="tts-reset-btn" class="btn btn-outline-secondary">
+                                            <i class="bi bi-arrow-counterclockwise"></i> Create Another
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div id="tts-error" class="d-none mt-4">
+                                    <div class="alert alert-danger">
+                                        <h5><i class="bi bi-exclamation-triangle"></i> Audio Generation Failed</h5>
+                                        <p id="tts-error-message">There was an error generating your audio.</p>
+                                        <button id="tts-retry-btn" class="btn btn-outline-primary mt-2">
+                                            <i class="bi bi-arrow-repeat"></i> Try Again
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-4">
+                                
+                                <div class="alert alert-info">
+                                    <h5>Copy Text</h5>
+                                    <p>You can copy the processed text to use in other applications:</p>
+                                    
+                                    <div class="mb-3">
+                                        <button id="copy-for-tts-btn" class="btn btn-success mb-2 w-100">
+                                            <i class="bi bi-clipboard"></i> Copy Text to Clipboard
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Controls -->
+<div class="controls-section" style="display: block !important; visibility: visible !important; opacity: 1 !important; position: relative !important; background-color: #212529 !important; border-radius: 0.5rem; padding: 1.5rem; margin-top: 2rem; width: 100%; z-index: 100;">
+            <div class="row">
+                <!-- Left Column: Rewriting Options -->
+                <div class="col-md-8">
+                    <!-- Custom Instructions Card -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-dark">
+                            <h5 class="card-title m-0"><i class="bi bi-magic"></i> Custom Instructions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="customInstructions" class="form-label" id="instructionsLabel">How would you like the text rewritten?</label>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="mainAiProvider" class="form-label">AI Provider:</label>
+                                    <select id="mainAiProvider" class="form-select">
+                                        <option value="">Auto (Default)</option>
+                                        <option value="openai">OpenAI</option>
+                                        <option value="anthropic">Anthropic</option>
+                                        <option value="azure">Azure OpenAI (GPT-4 Turbo)</option>
+                                        <option value="perplexity">Perplexity</option>
+                                        <option value="deepseek">DeepSeek</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <textarea id="customInstructions" class="form-control" rows="4"
+                                      placeholder="Enter your specific instructions, for example:
+'Make it one-third the length and write it so a 15-year-old can understand it'
+'Rewrite this as a dialogue between a smart person and a dumb person, make the smart person sarcastic'
+'Simplify the language but keep all the key points'"></textarea>
+                                <div class="text-muted small mt-2">
+                                    Be as specific as you want about length, style, format, or any other aspects you want to change.
+                                </div>
+                            </div>
+                            <div class="d-grid mt-3">
+                                <button id="applyInstructionsBtn" class="btn btn-primary">
+                                    <i class="bi bi-lightning"></i> Apply Instructions
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rewrite Options Card -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-dark">
+                            <h5 class="card-title m-0"><i class="bi bi-pencil-square"></i> Rewrite Options</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Quick Options -->
+                            <div class="mb-3 pb-3 border-bottom">
+                                <h6 class="text-primary mb-2"><i class="bi bi-lightning"></i> Quick Rewrite</h6>
+                                <div class="form-group mb-2">
+                                    <label for="educationLevel" class="form-label">Education Level:</label>
+                                    <select class="form-select" id="educationLevel">
+                                        <option value="15year">15-year-old (High School)</option>
+                                        <option value="college">College Graduate</option>
+                                        <option value="masters">Master's Student</option>
+                                        <option value="phd">PhD Level</option>
+                                    </select>
+                                </div>
+                                <div class="d-grid">
+                                    <button id="quickRewriteBtn" class="btn btn-primary">Quick Rewrite</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Author Style Section -->
+                            <div class="mb-3 pb-3 border-bottom" style="display: none;">
+                                <h6 class="text-primary mb-2"><i class="bi bi-person-badge"></i> Author Style</h6>
+                                <div class="form-group mb-2">
+                                    <label for="authorStyle" class="form-label">Specific Author's Style:</label>
+                                    <input type="text" class="form-control" id="authorStyle" 
+                                        placeholder="e.g., Shakespeare, Bertrand Russell, Ernest Hemingway">
+                                </div>
+                                <div class="d-grid">
+                                    <button id="styleRewriteBtn" class="btn btn-primary">Rewrite in Style</button>
+                                </div>
+                            </div>
+
+                            <!-- Complete Rewrite Section -->
+                            <div style="display: none;">
+                                <h6 class="text-primary mb-2"><i class="bi bi-file-earmark-text"></i> Complete Document</h6>
+                                <div class="d-grid">
+                                    <button id="rewriteCompleteBtn" class="btn btn-warning" type="button">
+                                        Rewrite Complete Text
+                                    </button>
+                                    <div class="text-muted small mt-1">
+                                        This will process all chunks sequentially. May take several minutes.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Translation Options -->
+                    <div class="card mb-3" style="display: none;">
+                        <div class="card-header bg-dark">
+                            <h5 class="card-title m-0"><i class="bi bi-translate"></i> Translation</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group mb-3">
+                                <label for="targetLanguage" class="form-label">Target Language:</label>
+                                <select class="form-select" id="targetLanguage">
+                            <option value="en" selected>English (No Translation)</option>
+                            <option value="es">Spanish (Español)</option>
+                            <option value="fr">French (Français)</option>
+                            <option value="de">German (Deutsch)</option>
+                            <option value="it">Italian (Italiano)</option>
+                            <option value="pt">Portuguese (Português)</option>
+                            <option value="nl">Dutch (Nederlands)</option>
+                            <option value="ru">Russian (Русский)</option>
+                            <option value="zh">Chinese (中文)</option>
+                            <option value="ja">Japanese (日本語)</option>
+                            <option value="ko">Korean (한국어)</option>
+                            <option value="ar">Arabic (العربية)</option>
+                            <option value="hi">Hindi (हिन्दी)</option>
+                            <option value="bn">Bengali (বাংলा)</option>
+                            <option value="ur">Urdu (اردو)</option>
+                            <option value="tr">Turkish (Türkçe)</option>
+                            <option value="vi">Vietnamese (Tiếng Việt)</option>
+                            <option value="th">Thai (ไทย)</option>
+                            <option value="id">Indonesian (Bahasa Indonesia)</option>
+                            <option value="pl">Polish (Polski)</option>
+                            <option value="cs">Czech (Čeština)</option>
+                            <option value="hu">Hungarian (Magyar)</option>
+                            <option value="sv">Swedish (Svenska)</option>
+                            <option value="fi">Finnish (Suomi)</option>
+                            <option value="da">Danish (Dansk)</option>
+                            <option value="no">Norwegian (Norsk)</option>
+                            <option value="ro">Romanian (Română)</option>
+                            <option value="uk">Ukrainian (Українська)</option>
+                            <option value="he">Hebrew (עברית)</option>
+                            <option value="fa">Persian (فارسی)</option>
+                            <option value="el">Greek (Ελληνικά)</option>
+                        </select>
+                        
+                        <!-- Document Length Mode Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">Document Size:</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="documentLengthMode" id="shortDocumentMode" value="short" checked>
+                                <label class="form-check-label" for="shortDocumentMode">
+                                    Standard Translation <span class="text-muted small">(≤2,000 words)</span>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="documentLengthMode" id="fullDocumentMode" value="full">
+                                <label class="form-check-label" for="fullDocumentMode">
+                                    Full-Length Translation <span class="text-muted small">(2,000-20,000 words)</span>
+                                </label>
+                            </div>
+                            <div class="form-check mb-1">
+                                <input class="form-check-input" type="radio" name="documentLengthMode" id="advancedChunkingMode" value="advanced">
+                                <label class="form-check-label" for="advancedChunkingMode">
+                                    <span class="badge bg-success">New</span> 
+                                    Advanced Translation <span class="text-muted small">(20,000-500,000 words)</span>
+                                </label>
+                            </div>
+                            <div class="alert alert-secondary p-2 small mt-2" id="translationModeInfo">
+                                <i class="bi bi-info-circle"></i> Standard mode: All languages via OpenAI or DeepL
+                            </div>
+                        </div>
+                        
+                        <!-- Advanced Translation Options (initially hidden) -->
+                        <div id="advancedTranslationOptions" class="card mb-3" style="display: none; background-color: rgba(33, 150, 83, 0.1); border: 1px solid rgba(33, 150, 83, 0.2);">
+                            <div class="card-body p-3">
+                                <h6 class="card-title mb-3">
+                                    <i class="bi bi-stars"></i> Advanced Options
+                                </h6>
+                                <div class="form-group mb-2">
+                                    <label for="translationApi" class="form-label">Translation Engine:</label>
+                                    <select class="form-select" id="translationApi">
+                                        <option value="auto" selected>Auto-select (recommended)</option>
+                                        <option value="deepl">DeepL (best for European languages)</option>
+                                        <option value="openai">OpenAI (best for non-European languages)</option>
+                                    </select>
+                                    <div class="form-text small">
+                                        Auto-select uses DeepL for supported languages, OpenAI for others.
+                                    </div>
+                                </div>
+                                <div class="alert alert-success p-2 small mt-2 mb-0">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    Advanced mode uses our new chunking protocol with enhanced reliability and error recovery.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <div class="d-grid gap-2 mb-2">
+                                <button id="translateBtn" class="btn btn-primary">
+                                    <i class="bi bi-translate"></i> Translate Text
+                                </button>
+                                
+                                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#directTwoBoxModal">
+                                    <i class="bi bi-box"></i> Two-Box Translation (Source/Target)
+                                </button>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-1">
+                                <div class="text-muted small">
+                                    Translate without reprocessing text
+                                </div>
+                                <span id="engineIndicator" class="badge bg-secondary" style="display: none;">
+                                    Engine: <span id="translationEngine">-</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden admin endpoint for API key management - not visible to users -->
+                </div>
+
+                <!-- Right Column: Tools & Utilities -->
+                <div class="col-md-4">
+                    <!-- Unified Tools Card -->
+                    <div class="card mb-3" style="display: none;">
+                        <div class="card-header bg-dark">
+                            <h5 class="card-title m-0"><i class="bi bi-tools"></i> Text Utilities</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Style Options Section -->
+                            <div class="mb-3 pb-3 border-bottom">
+                                <h6 class="text-primary mb-2"><i class="bi bi-person-fill"></i> Writing Style</h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="usePersonalStyle">
+                                    <label class="form-check-label" for="usePersonalStyle">Use my personal writing style</label>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button id="rewriteBtn" class="btn btn-primary" type="button">Rewrite In My Style</button>
+                                    <button id="humanizerBtn" class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#humanizerModal">
+                                        <i class="bi bi-file-earmark-text"></i> Manage Writing Samples
+                                    </button>
+                                </div>
+                                <div id="humanizerStatus" class="small text-success mt-2" style="display: none;"></div>
+                            </div>
+                            
+                            <!-- Content Analysis Tools -->
+                            <div class="mb-3 pb-3 border-bottom">
+                                <h6 class="text-primary mb-2"><i class="bi bi-search"></i> Content Tools</h6>
+                                <div class="d-grid gap-2">
+                                    <button id="extractTextBtn" class="btn btn-info w-100" type="button">
+                                        <i class="bi bi-image-alt"></i> Extract Text from Image
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Download & Sharing Section -->
+                            <div>
+                                <h6 class="text-primary mb-2"><i class="bi bi-download"></i> Download & Export</h6>
+                                <div class="mb-2">
+                                    <select class="form-select" id="downloadFormat">
+                                        <option value="pdf">PDF</option>
+                                        <option value="docx">Word Document</option>
+                                    </select>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center" style="gap: 10px;">
+                                    <button id="downloadBtn" class="btn btn-info flex-grow-1" type="button">Download</button>
+                                    <button id="shareBtn" class="btn btn-success flex-grow-1" type="button" data-bs-toggle="modal" data-bs-target="#shareModal">Share</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat with AI Section -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card border-info">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="card-title m-0"><i class="bi bi-chat-dots"></i> Chat with AI</h5>
+                        <small>Ask anything, generate content, or discuss what's in the boxes above</small>
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- Chat Messages Container -->
+                        <div id="chatMessagesContainer" class="chat-messages-container" style="height: 400px; overflow-y: auto; padding: 20px; background: #2c3e50; border-radius: 0;">
+                            <div class="chat-message assistant-message mb-3">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <div class="avatar bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; font-size: 18px;">
+                                            <i class="bi bi-robot"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <div class="message-content bg-white rounded p-3 shadow-sm" style="color: #2c3e50; font-size: 16px; line-height: 1.5;">
+                                            <strong style="color: #27ae60;">AI Assistant:</strong> Hello! I can help you with anything - generate content, answer questions, or discuss what's in your text boxes above. What would you like to work on?
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat Input -->
+                        <div class="chat-input-area p-4" style="border-top: 2px solid #34495e; background: #34495e;">
+                            <div class="d-flex gap-3">
+                                <textarea id="chatInput" class="form-control flex-grow-1" rows="6" 
+                                    placeholder="Type your message... (Press Enter to send)"
+                                    style="resize: vertical; font-size: 18px; background: white !important; color: #2c3e50 !important; border: 3px solid #3498db; min-height: 120px; padding: 15px; z-index: 1;"></textarea>
+                                <button id="sendChatBtn" class="btn btn-primary btn-lg align-self-end" type="button" style="font-size: 18px; font-weight: bold; padding: 15px 25px; height: fit-content;">
+                                    <i class="bi bi-send"></i> Send
+                                </button>
+                            </div>
+                            <div class="mt-2">
+                                <small style="color: #ecf0f1; font-size: 14px;">
+                                    <i class="bi bi-lightbulb"></i> 
+                                    Tip: I can see what's in your input and output boxes above. You can also send my responses to the input box for processing.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="shareModalLabel">Share Rewritten Text</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="shareForm">
+                        <div class="mb-3">
+                            <label for="shareEmail" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="shareEmail" placeholder="your@email.com" required>
+                            <div class="form-text">The rewritten text will be sent to this email address.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="shareSubject" class="form-label">Subject (Optional)</label>
+                            <input type="text" class="form-control" id="shareSubject" placeholder="Your Rewritten Text">
+                            <div class="form-text">Default: "Your Rewritten Text"</div>
+                        </div>
+                        <div class="form-text mb-3">
+                            <p>For short texts, the content will be included directly in the email body.</p>
+                            <p>For longer content, a PDF attachment will be created and included with the email.</p>
+                        </div>
+                    </form>
+                    <div id="shareStatus" class="alert" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="sendEmailBtn">Send Email</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Humanizer Modal -->
+    <div class="modal fade" id="humanizerModal" tabindex="-1" aria-labelledby="humanizerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="humanizerModalLabel">Manage Personal Writing Style</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6>What is the Humanizer?</h6>
+                        <p>The Humanizer analyzes your writing samples to understand your personal style. It then applies this style when rewriting text, making AI-generated content sound more like you wrote it.</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="humanizerEmail" class="form-label">Your Email Address</label>
+                        <input type="email" class="form-control" id="humanizerEmail" placeholder="your@email.com" required>
+                        <div class="form-text">This is used to store and retrieve your writing samples.</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Add Writing Samples</h6>
+                        <p class="text-muted small">Add samples of your writing style. Shorter, focused samples often work better than longer documents.</p>
+                        
+                        <!-- Tab navigation for adding samples -->
+                        <ul class="nav nav-tabs mb-3" id="sampleAddTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="paste-text-tab" data-bs-toggle="tab" data-bs-target="#paste-text-content" type="button" role="tab" aria-controls="paste-text-content" aria-selected="true">Paste Text</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="upload-file-tab" data-bs-toggle="tab" data-bs-target="#upload-file-content" type="button" role="tab" aria-controls="upload-file-content" aria-selected="false">Upload File</button>
+                            </li>
+                        </ul>
+                        
+                        <!-- Tab content -->
+                        <div class="tab-content" id="sampleAddTabsContent">
+                            <!-- Paste Text Tab -->
+                            <div class="tab-pane fade show active" id="paste-text-content" role="tabpanel" aria-labelledby="paste-text-tab">
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <form id="pasteTextForm">
+                                            <div class="mb-3">
+                                                <label for="sampleTextInput" class="form-label">Paste your writing sample here:</label>
+                                                <textarea class="form-control" id="sampleTextInput" rows="6" placeholder="Paste a paragraph or two of your own writing that best represents your style..."></textarea>
+                                            </div>
+                                            <div class="text-muted small mb-3">
+                                                Tip: 1-2 paragraphs of your best writing is often better than a lengthy document.
+                                            </div>
+                                            <button type="button" id="saveTextSampleBtn" class="btn btn-primary w-100">Add Text Sample</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Upload File Tab -->
+                            <div class="tab-pane fade" id="upload-file-content" role="tabpanel" aria-labelledby="upload-file-tab">
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <form id="sampleUploadForm" enctype="multipart/form-data">
+                                            <div class="mb-3">
+                                                <label for="sampleFileInput" class="form-label">Select a file</label>
+                                                <input class="form-control" type="file" id="sampleFileInput" name="file">
+                                            </div>
+                                            <div class="text-muted small mb-3">
+                                                Supported formats: PDF, Word documents (.doc, .docx), Text (.txt), Images (.jpg, .jpeg, .png)
+                                            </div>
+                                            <button type="button" id="uploadSampleBtn" class="btn btn-primary w-100">Upload Sample</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>Your Writing Samples</h6>
+                    <div id="samplesList" class="list-group mb-3">
+                        <!-- Samples will be loaded here dynamically -->
+                        <div class="text-center text-muted py-3" id="noSamplesMessage">
+                            No writing samples uploaded yet
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end">
+                        <button id="clearSamplesBtn" class="btn btn-outline-danger">Clear All Samples</button>
+                    </div>
+                    
+                    <div id="humanizerStatus" class="alert mt-3" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Translation Modal -->
+    <div class="modal fade" id="translationModal" tabindex="-1" aria-labelledby="translationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="translationModalLabel">Simple Text Translation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="sourceLanguage" class="form-label">Source Language:</label>
+                            <select class="form-select" id="sourceLanguage">
+                                <option value="auto" selected>Auto-detect</option>
+                                <option value="en">English</option>
+                                <option value="fr">French</option>
+                                <option value="zh">Chinese</option>
+                                <option value="de">German</option>
+                                <option value="es">Spanish</option>
+                                <option value="it">Italian</option>
+                                <option value="ja">Japanese</option>
+                                <option value="ru">Russian</option>
+                                <option value="pt">Portuguese</option>
+                                <option value="ar">Arabic</option>
+                                <option value="hi">Hindi</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="targetLanguage" class="form-label">Target Language:</label>
+                            <select class="form-select" id="targetLanguage">
+                                <option value="en" selected>English</option>
+                                <option value="fr">French</option>
+                                <option value="zh">Chinese</option>
+                                <option value="de">German</option>
+                                <option value="es">Spanish</option>
+                                <option value="it">Italian</option>
+                                <option value="ja">Japanese</option>
+                                <option value="ru">Russian</option>
+                                <option value="pt">Portuguese</option>
+                                <option value="ar">Arabic</option>
+                                <option value="hi">Hindi</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="aiProviderTranslation" class="form-label">AI Provider:</label>
+                            <select class="form-select" id="aiProviderTranslation">
+                                <option value="openai" selected>OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="perplexity">Perplexity</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="startTranslationBtn">Translate Text</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Translation Modal -->
+    <div class="modal fade" id="translationModal" tabindex="-1" aria-labelledby="translationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="translationModalLabel">
+                        <i class="bi bi-translate"></i> Translation System
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="translationForm">
+                        <div class="alert alert-info">
+                            <strong>Current input:</strong> <span id="inputDocumentInfo">Text document for translation</span>
+                        </div>
+                        
+                        <div class="row mb-1">
+                            <div class="col-12">
+                                <div id="detectedLanguageIndicator" class="alert alert-success" style="display: none; padding: 0.5rem;">
+                                    <small id="detectedLanguageLabel">Detected: French</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="sourceLanguage" class="form-label fw-bold">FROM: Source Language</label>
+                                <select class="form-select form-select-lg" id="sourceLanguage">
+                                    <option value="auto">Auto-detect</option>
+                                    <option value="fr">French</option>
+                                    <option value="zh">Chinese</option>
+                                    <option value="de">German</option>
+                                    <option value="es">Spanish</option>
+                                    <option value="it">Italian</option>
+                                    <option value="ja">Japanese</option>
+                                    <option value="ru">Russian</option>
+                                    <option value="pt">Portuguese</option>
+                                    <option value="ar">Arabic</option>
+                                    <option value="hi">Hindi</option>
+                                    <option value="en">English</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="targetLanguage" class="form-label fw-bold">TO: Target Language</label>
+                                <select class="form-select form-select-lg" id="targetLanguage">
+                                    <option value="en" selected>English</option>
+                                    <option value="fr">French</option>
+                                    <option value="zh">Chinese</option>
+                                    <option value="de">German</option>
+                                    <option value="es">Spanish</option>
+                                    <option value="it">Italian</option>
+                                    <option value="ja">Japanese</option>
+                                    <option value="ru">Russian</option>
+                                    <option value="pt">Portuguese</option>
+                                    <option value="ar">Arabic</option>
+                                    <option value="hi">Hindi</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="aiProviderTranslation" class="form-label">AI Provider for Translation</label>
+                            <select class="form-select" id="aiProviderTranslation">
+                                <option value="">Auto (Default)</option>
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="perplexity">Perplexity</option>
+                                <option value="deepseek">DeepSeek</option>
+                            </select>
+                            <div class="form-text">Select the AI provider to use for translation processing</div>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="translateFormality" checked>
+                            <label class="form-check-label" for="translateFormality">
+                                Preserve formal tone
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success btn-lg" id="startTranslationBtn">
+                        <i class="bi bi-translate"></i> Translate Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two-Box Translation Modal -->
+    <div class="modal fade" id="twoBoxTranslationModal" tabindex="-1" aria-labelledby="twoBoxTranslationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="twoBoxTranslationModalLabel">Direct Two-Box Translation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Use this simplified interface for direct translation between any two languages.</p>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="sourceLanguage" class="form-label">Source Language:</label>
+                            <select class="form-select" id="sourceLanguage">
+                                <option value="auto" selected>Auto-detect</option>
+                                <option value="en">English</option>
+                                <option value="es">Spanish (Español)</option>
+                                <option value="fr">French (Français)</option>
+                                <option value="de">German (Deutsch)</option>
+                                <option value="it">Italian (Italiano)</option>
+                                <option value="pt">Portuguese (Português)</option>
+                                <option value="nl">Dutch (Nederlands)</option>
+                                <option value="ru">Russian (Русский)</option>
+                                <option value="zh">Chinese (中文)</option>
+                                <option value="ja">Japanese (日本語)</option>
+                                <option value="ko">Korean (한국어)</option>
+                                <option value="ar">Arabic (العربية)</option>
+                                <option value="hi">Hindi (हिन्दी)</option>
+                                <option value="bn">Bengali (বাংলা)</option>
+                                <option value="tr">Turkish (Türkçe)</option>
+                                <option value="vi">Vietnamese (Tiếng Việt)</option>
+                                <option value="th">Thai (ไทย)</option>
+                                <option value="id">Indonesian (Bahasa Indonesia)</option>
+                                <option value="pl">Polish (Polski)</option>
+                                <option value="sv">Swedish (Svenska)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="targetLanguageModal" class="form-label">Target Language:</label>
+                            <select class="form-select" id="targetLanguageModal">
+                                <option value="en">English</option>
+                                <option value="es">Spanish (Español)</option>
+                                <option value="fr">French (Français)</option>
+                                <option value="de">German (Deutsch)</option>
+                                <option value="it">Italian (Italiano)</option>
+                                <option value="pt">Portuguese (Português)</option>
+                                <option value="nl">Dutch (Nederlands)</option>
+                                <option value="ru">Russian (Русский)</option>
+                                <option value="zh">Chinese (中文)</option>
+                                <option value="ja">Japanese (日本語)</option>
+                                <option value="ko">Korean (한국어)</option>
+                                <option value="ar">Arabic (العربية)</option>
+                                <option value="hi">Hindi (हिन्दी)</option>
+                                <option value="bn">Bengali (বাংลা)</option>
+                                <option value="tr">Turkish (Türkçe)</option>
+                                <option value="vi">Vietnamese (Tiếng Việt)</option>
+                                <option value="th">Thai (ไทย)</option>
+                                <option value="id">Indonesian (Bahasa Indonesia)</option>
+                                <option value="pl">Polish (Polski)</option>
+                                <option value="sv">Swedish (Svenska)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="aiProviderTranslationModal" class="form-label">AI Provider:</label>
+                        <select class="form-select" id="aiProviderTranslationModal">
+                            <option value="">Auto (Default)</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic</option>
+                            <option value="perplexity">Perplexity</option>
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="perplexity">Perplexity</option>
+                        </select>
+                        <div class="form-text">Select the AI provider to use for direct translation</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success btn-lg" id="twoBoxTranslateBtn">
+                        <i class="bi bi-translate"></i> Translate Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Make sure main.js is loaded after all DOM elements -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dictation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/text-to-speech.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/translation.js') }}"></script>
+    <!-- UI Customizer JS -->
+
+
+    <!-- Direct Two-Box Translation Modal -->
+    <div class="modal fade" id="directTwoBoxModal" tabindex="-1" aria-labelledby="directTwoBoxModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="directTwoBoxModalLabel">Two-Box Translation</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="sourceLanguageSelect" class="form-label">Source Language:</label>
+                            <select class="form-select" id="sourceLanguageSelect">
+                                <option value="auto" selected>Auto-detect</option>
+                                <option value="en">English</option>
+                                <option value="es">Spanish (Español)</option>
+                                <option value="fr">French (Français)</option>
+                                <option value="de">German (Deutsch)</option>
+                                <option value="it">Italian (Italiano)</option>
+                                <option value="pt">Portuguese (Português)</option>
+                                <option value="nl">Dutch (Nederlands)</option>
+                                <option value="ru">Russian (Русский)</option>
+                                <option value="zh">Chinese (中文)</option>
+                                <option value="ja">Japanese (日本語)</option>
+                                <option value="ko">Korean (한국어)</option>
+                                <option value="ar">Arabic (العربية)</option>
+                                <option value="hi">Hindi (हिन्दी)</option>
+                                <option value="tr">Turkish (Türkçe)</option>
+                                <option value="vi">Vietnamese (Tiếng Việt)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="targetLanguageSelect" class="form-label">Target Language:</label>
+                            <select class="form-select" id="targetLanguageSelect">
+                                <option value="en" selected>English</option>
+                                <option value="es">Spanish (Español)</option>
+                                <option value="fr">French (Français)</option>
+                                <option value="de">German (Deutsch)</option>
+                                <option value="it">Italian (Italiano)</option>
+                                <option value="pt">Portuguese (Português)</option>
+                                <option value="nl">Dutch (Nederlands)</option>
+                                <option value="ru">Russian (Русский)</option>
+                                <option value="zh">Chinese (中文)</option>
+                                <option value="ja">Japanese (日本語)</option>
+                                <option value="ko">Korean (한국어)</option>
+                                <option value="ar">Arabic (العربية)</option>
+                                <option value="hi">Hindi (हिन्दी)</option>
+                                <option value="tr">Turkish (Türkçe)</option>
+                                <option value="vi">Vietnamese (Tiếng Việt)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="aiProviderSelect" class="form-label">AI Provider:</label>
+                        <select class="form-select" id="aiProviderSelect">
+                            <option value="auto" selected>Auto (Best for language pair)</option>
+                            <option value="openai">OpenAI (GPT-4o)</option>
+                            <option value="anthropic">Anthropic (Claude 3.5)</option>
+                            <option value="perplexity">Perplexity (Llama 3.1)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill"></i> This direct translation handles documents of any size with automatic chunking and reassembly.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="twoBoxTranslateButton">
+                        <i class="bi bi-translate"></i> Translate Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+</body>
+</html>

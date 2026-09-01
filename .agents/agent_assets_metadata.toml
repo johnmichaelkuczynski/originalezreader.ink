@@ -1,0 +1,38 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "NNP22ePIxhr7HtuMfaSxA"
+uri = "file://promo/ez-reader-tiktok-voice.mp3"
+type = "audio"
+title = "friendly EZ Reader promo"
+description = "Text-to-speech audio: Meet EZ Reader from ZHI Systems. It writes, rewrites, helps with homework, and keeps math notation looking perfect. Give it any writing sample, and it can rewrite in that style.…"
+logical_id = "35349ded-7cc1-46d3-8fea-d36d7a0d57ac"
+
+[[outputs]]
+id = "0Ex5Rq_moquYGWbLhrJJ4"
+uri = "file://promo/ez-reader-tiktok.mp4"
+type = "video"
+title = "EZ Reader TikTok Promo"
+description = "43.6-second vertical TikTok video using the live EZ Reader screenshot, natural male narration, timed feature callouts, and no music."
+logical_id = "0d8a623a-a1ab-4065-a7df-f510ef1e8fe2"
+content_hash = "sha256:d2ef263734945ad83805b60f737855e08803af0a0a0e1077c1b3ff452dad9ee1"
+size = 1540010
+mtime_ms = 1788296336041
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:f35b702a-f2d7-47ea-8acb-7d553f400f86/0d8a623a-a1ab-4065-a7df-f510ef1e8fe2/4ed1a4a8-bfac-495d-9d94-b267f84d2aed"
+storage_version_token = "1788296374755117"
+content_type = "video/mp4"
+
+[[outputs]]
+id = "r2sO0pLwtT3dKlD8cW_3X"
+uri = "file://promo/ez-reader-tiktok-description.txt"
+type = "text"
+title = "TikTok Description"
+description = "Ready-to-paste TikTok caption with the verified production URL and hashtags."
+logical_id = "6aae5850-afec-4ce7-ad3b-58558937d001"
+content_hash = "sha256:d95887b7a9ce342c5c8944acbb4b960c19d39d48c0809a7d5e369840066979a9"
+size = 432
+mtime_ms = 1788296366561
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:f35b702a-f2d7-47ea-8acb-7d553f400f86/6aae5850-afec-4ce7-ad3b-58558937d001/d85f9e19-fa00-4a29-b93c-013f80921b7c"
+storage_version_token = "1788296375376745"
+content_type = "text/plain"
